@@ -1,3 +1,37 @@
+
+@Query(value = "SELECT broker.* " +
+        "FROM broker_feed_naming broker " +
+        "WHERE broker.old_file_name != 'IGNORE-FILE_CREATED_FOR_CRR' " +
+        "AND broker.new_file_name LIKE CONCAT(:prefix, '%') " +
+        "AND broker.integration_id IN ( " +
+        "    SELECT MAX(integration.id) " +
+        "    FROM feed_integration_details integration " +
+        "    INNER JOIN broker_feed feed " +
+        "        ON integration.broker_feed_id = feed.id " +
+        "       AND feed.broker_code = :brokerCode " +
+        "       AND feed.feed_code LIKE CONCAT('%', :key, '%') " +
+        "       AND feed.country = :country " +
+        "       AND integration.activity_date = :activityDate " +
+        "    WHERE EXISTS ( " +
+        "        SELECT 1 " +
+        "        FROM broker_feed_naming bfn " +
+        "        WHERE bfn.integration_id = integration.id " +
+        "          AND bfn.new_file_name LIKE CONCAT(:prefix, '%') " +
+        "          AND bfn.old_file_name != 'IGNORE-FILE_CREATED_FOR_CRR' " +
+        "    ) " +
+        "    GROUP BY feed.id " +
+        ")",
+       nativeQuery = true)
+List<BrokerFeedNamingEntity> findFilteredBrokerFeedNaming(
+        @Param("brokerCode") String brokerCode,
+        @Param("key") String key,
+        @Param("activityDate") LocalDate activityDate,
+        @Param("country") String country,
+        @Param("prefix") String prefix
+);
+
+
+
 @Query(value = """
     SELECT broker.*
     FROM broker_feed_naming broker
